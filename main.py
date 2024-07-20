@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw, ExifTags
 
 # "images"ディレクトリ内のすべてのJPEGファイルを取得
 image_dir = "images"
+output_dir = "outputs"
 image_files = [f for f in os.listdir(image_dir) if f.lower().endswith((".jpg", ".jpeg"))]
 print(image_files)
 
@@ -26,14 +27,21 @@ for image_file in image_files:
     pil_image = Image.open(os.path.join(image_dir, image_file))
     exif = pil_image._getexif()
 
+    rotation = 0
     is_portrait = False
     if exif:
         for tag, value in exif.items():
             decoded = ExifTags.TAGS.get(tag, tag)
             if decoded == 'Orientation':
-                if value in [6, 8]:  # 6: 90度回転, 8: 270度回転
+                print(value)
+                if value in [8]:  #　8: 270度回転
                     is_portrait = True
-                    print("Orientation: Portrait")
+                    rotation = 1
+                    print("Orientation: 270度")
+                if value in [6]:  # 6: 90度回転
+                    is_portrait = True
+                    rotation = 3
+                    print("Orientation: 90度")
                 else:
                     print("Orientation: Landscape")
                 break
@@ -47,7 +55,7 @@ for image_file in image_files:
 
     # 縦画像だったら90度回転させる
     if is_portrait:
-        load_image = np.rot90(load_image, 3)
+        load_image = np.rot90(load_image, rotation)
         height, width = width, height  # 回転後のサイズを更新
         print(f"Rotated size: {width}x{height}")
 
@@ -66,5 +74,6 @@ for image_file in image_files:
 
     del draw
 
-    # 結果の画像を表示する
-    pil_image.show()
+    # EXIF情報を再設定して結果の画像を保存する
+    pil_image.save(os.path.join(output_dir, image_file))
+    print(f"Saved result to {os.path.join(output_dir, image_file)}")
